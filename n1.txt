@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html data-theme="dark" xmlns:th="http://www.thymeleaf.org" th:inline="none">
+<head>
+    <meta charset="UTF-8" />
+    <title>Status Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css?v=1" />
+    <!-- Flatpickr (dark theme) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        header.topbar{background:#0f172a;color:#fff;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
+        header.topbar a{color:#93c5fd;text-decoration:none;margin-left:1rem}
+        main.container{padding:1rem; overflow-x:auto;}
+        .hscroll{overflow-x:scroll; -webkit-overflow-scrolling:touch; width:100%; display:block}
+        table.wide{width:2230px;min-width:2230px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+        table.wide thead th{position:sticky;top:0;background:#0f172a;z-index:1}
+        table.wide tbody tr:nth-child(even){background-color:rgba(148,163,184,0.06)}
+        table.wide tbody tr:hover{background-color:rgba(148,163,184,0.12)}
+        table.wide th, table.wide td{white-space:nowrap;padding:10px 12px;border-bottom:1px solid #334155}
+        table.wide th:nth-child(1), table.wide td:nth-child(1){width:80px}
+        table.wide th:nth-child(2), table.wide td:nth-child(2){width:180px}
+        table.wide th:nth-child(3), table.wide td:nth-child(3){width:140px}
+        table.wide th:nth-child(4), table.wide td:nth-child(4){width:100px}
+        table.wide th:nth-child(5), table.wide td:nth-child(5){width:120px}
+        table.wide th:nth-child(6), table.wide td:nth-child(6){width:180px}
+        table.wide th:nth-child(7), table.wide td:nth-child(7){width:120px}
+        table.wide th:nth-child(8), table.wide td:nth-child(8){width:100px}
+        table.wide th:nth-child(9), table.wide td:nth-child(9){width:100px}
+        table.wide th:nth-child(10), table.wide td:nth-child(10){width:250px}
+        /* Table styling */
+        table.wide thead th{border-bottom:1px solid #334155}
+        .cell-clip{max-width:360px;overflow:hidden;text-overflow:ellipsis}
+        .status-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.85rem}
+        .status-STARTED{background:#334155;color:#e5e7eb}
+        .status-PROCESSING{background:#fb923c22;color:#fb923c}
+        .status-COMPLETED{background:#22c55e22;color:#22c55e}
+        .status-FAILED{background:#ef444422;color:#ef4444}
+        .grid-actions{display:flex;gap:8px;align-items:center}
+        .filters-bar{display:flex;gap:12px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .filter-row label{margin:0;display:flex;flex-direction:column;gap:4px}
+        .filter-row input{min-width:180px}
+        /* Ensure status select shows full text */
+        .status-select{min-width:220px;width:220px!important;height:40px;line-height:1.2;padding:6px 12px;border-radius:0 8px 8px 0;background:#0b1220;color:#e5e7eb;border:1px solid #334155;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+        table.wide select[name="status"]{min-width:220px;width:220px!important}
+        .ff-input{width:220px!important;height:40px;line-height:1.2;padding:6px 12px;-webkit-appearance:none;-moz-appearance:textfield;appearance:none;box-sizing:border-box}
+        .filters-bar .input-group{width:auto;gap:0;margin:0}
+        .filters-bar .input-group{display:flex;align-items:center;height:40px}
+        .filters-bar .input-group .input-group-text{background:#0f172a;color:#e5e7eb;border-color:#334155;height:40px;line-height:1.2;display:flex;align-items:center;border-radius:8px 0 0 8px;padding:6px 12px;box-sizing:border-box;font-size:1rem;vertical-align:middle;transform:translateY(-2px)}
+        .filters-bar .form-select,.filters-bar .form-control{background:#0b1220;color:#e5e7eb;border-color:#334155;height:40px;line-height:1.2;border-radius:0 8px 8px 0;padding:6px 12px;box-sizing:border-box;vertical-align:middle}
+        /* Force Bootstrap small variants to exact height/padding/font to avoid misalignment */
+        .filters-bar .form-control-sm, .filters-bar .form-select-sm{height:32px !important;padding:4px 8px !important;font-size:0.875rem !important;line-height:1.2 !important}
+        /* Compact date inputs */
+        #fromDate, #toDate{width:140px !important;height:32px !important;padding:4px 8px !important;font-size:0.875rem !important}
+        .filters-actions .btn{height:32px;line-height:1;padding:4px 12px;font-size:0.875rem;}
+        /* Override Bootstrap button sizes in filter section */
+        .filter-section .btn{height:32px !important;padding:4px 12px !important;font-size:0.875rem !important;line-height:1.2 !important;}
+        
+        /* Fancy dropdown styling */
+        .form-select {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+            border: 2px solid #334155 !important;
+            border-radius: 12px !important;
+            color: #e5e7eb !important;
+            font-weight: 500 !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .form-select:hover {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+            outline: none !important;
+        }
+        
+        .form-select::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .form-select:hover::before {
+            left: 100%;
+        }
+        
+        /* Custom dropdown arrow */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px 12px !important;
+            padding-right: 40px !important;
+        }
+        
+        /* Option styling */
+        .form-select option {
+            background: #1e293b !important;
+            color: #e5e7eb !important;
+            padding: 8px 12px !important;
+            font-weight: 500 !important;
+        }
+        
+        .form-select option:hover {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        
+        .form-select option:checked {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        /* ensure small variants match height */
+        .filters-bar .input-group.input-group-sm .input-group-text{height:32px;padding:0 8px;font-size:0.875rem;line-height:1.5}
+        .filters-bar .input-group.input-group-sm .form-select,
+        .filters-bar .input-group.input-group-sm .form-control{height:32px;padding:0 8px;font-size:0.875rem;line-height:1.5}
+        .filters-bar .form-select{padding-right:32px}
+        .filters-bar{align-items:center}
+        .filter-section{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
+        .filters-simple .form-label{margin-bottom:4px}
+        /* Ensure datepicker overlays above header/table */
+        .datepicker{z-index:3000}
+        /* Unified button styles (like APPLY) */
+        .btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer}
+        .btn:hover{filter:brightness(1.05)}
+        .btn:active{transform:translateY(1px)}
+        .btn-sm{padding:4px 8px;font-size:.85rem}
+        .btn-success{background:#22c55e;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer}
+        .btn-success:hover{background:#16a34a;filter:brightness(1.05)}
+        .btn-success:active{transform:translateY(1px)}
+        /* Fancy inline update UI */
+        .update-inline{display:flex;gap:8px;align-items:center}
+        .pill-select{appearance:none;background:#0b1220;border:1px solid #334155;color:#e5e7eb;border-radius:999px;padding:6px 28px 6px 12px;position:relative}
+        .pill-select:focus{outline:2px solid #2563eb}
+        .pill-select-wrapper{position:relative}
+        .pill-select-wrapper:after{content:'▼';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none}
+        .btn-update{background:linear-gradient(135deg,#2563eb,#22c55e);border:none;color:white;border-radius:999px;padding:6px 12px;cursor:pointer}
+        .btn-update:hover{filter:brightness(1.05)}
+        .btn-update:active{transform:translateY(1px)}
+        /* Chips for time taken */
+        .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.85rem}
+        .chip-ok{background:#22c55e22;color:#22c55e}
+        .chip-warn{background:#f59e0b22;color:#f59e0b}
+        .chip-bad{background:#ef444422;color:#ef4444}
+        /* ID column styling */
+        table.wide th:nth-child(1), table.wide td:nth-child(1) {
+            font-weight: 600;
+            color: #3b82f6;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<header class="topbar">
+    <strong>Status Report</strong>
+        <nav>
+            <a href="/">New</a>
+            <a href="/import">Import</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/update-status">Update Status</a>
+            <a href="/monitoring">Monitoring</a>
+        </nav>
+</header>
+<div class="header-bar"></div>
+
+<main class="container">
+    <form method="get" action="/status-report" class="filter-section">
+        <div class="filters-simple">
+            <div class="row g-3 align-items-start flex-nowrap">
+                <div class="col-auto">
+                    <label for="statusSelect" class="form-label mb-1">Status</label>
+                    <select id="statusSelect" name="status" class="form-select form-select-sm">
+                        <option value="" th:selected="${status == null}">Any</option>
+                        <option value="STARTED" th:selected="${status != null and status.name() == 'STARTED'}">STARTED</option>
+                        <option value="PROCESSING" th:selected="${status != null and status.name() == 'PROCESSING'}">PROCESSING</option>
+                        <option value="COMPLETED" th:selected="${status != null and status.name() == 'COMPLETED'}">COMPLETED</option>
+                        <option value="FAILED" th:selected="${status != null and status.name() == 'FAILED'}">FAILED</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="fromDate" class="form-label mb-1">From</label>
+                    <input id="fromDate" type="text" name="completedFrom" th:value="${fromStr}" class="form-control form-control-sm" />
+                </div>
+                <div class="col-auto">
+                    <label for="toDate" class="form-label mb-1">To</label>
+                    <input id="toDate" type="text" name="completedTo" th:value="${toStr}" class="form-control form-control-sm" />
+                </div>
+                <div class="col-auto d-flex gap-2 align-self-end">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <button type="button" id="refreshBtn" class="btn btn-secondary">Refresh</button>
+                    <button type="button" id="exportBtn" class="btn btn-success">Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <div class="hscroll">
+            <table role="grid" class="wide table table-dark table-hover table-striped align-middle mb-0">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Created</th>
+                <th>User</th>
+                <th>Env</th>
+                <th>
+                    Status
+                    <span th:if="${status != null}" class="status-chip" th:classappend="${' status-' + status}" th:text="${status}"></span>
+                </th>
+                <th>Completed At</th>
+                <th>Time Taken</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Failure Reason</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(rows)}">
+                <td colspan="10">No results</td>
+            </tr>
+            <tr th:each="e : ${rows}">
+                <td th:text="${e.id}"></td>
+                <td th:text="${#temporals.format(e.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${e.userId}"></td>
+                <td th:text="${e.environment}"></td>
+                <td><span class="status-chip" th:classappend="${' status-' + e.status}" th:text="${e.status}"></span></td>
+                <td th:text="${e.completedAt != null ? #temporals.format(e.completedAt, 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td th:text="${e.timeTaken}"></td>
+                <td th:text="${e.inputValue}"></td>
+                <td th:text="${e.outputValue}"></td>
+                <td>
+                    <span class="cell-clip" th:text="${e.failureReason}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <nav aria-label="Pagination" class="grid" style="margin-top:12px;align-items:center">
+        <div>
+            <small th:text="${'Showing page ' + (page + 1) + ' of ' + (totalPages > 0 ? totalPages : 1)}"></small>
+        </div>
+        <div style="justify-self:end;display:flex;gap:8px">
+            <a role="button" class="secondary" th:classappend="${page == 0} ? ' disabled' : ''" th:href="@{'/status-report'(status=${status}, user=${user}, env=${env}, completedFrom=${fromStr}, completedTo=${toStr}, minMinutes=${minMinutes}, maxMinutes=${maxMinutes}, page=${page-1}, size=${size})}">Prev</a>
+            <a role="button" class="secondary" th:classappend="${page + 1 >= totalPages} ? ' disabled' : ''" th:href="@{'/status-report'(status=${status}, user=${user}, env=${env}, completedFrom=${fromStr}, completedTo=${toStr}, minMinutes=${minMinutes}, maxMinutes=${maxMinutes}, page=${page+1}, size=${size})}">Next</a>
+        </div>
+    </nav>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  // Initialize from date picker
+  const fromDatePicker = flatpickr('#fromDate', { 
+    dateFormat: 'Y-m-d', 
+    maxDate: 'today', 
+    allowInput: true, 
+    tooltip: false,
+    defaultDate: 'today',
+    onChange: function(selectedDates, dateStr, instance) {
+      // Update to date picker's min date when from date changes
+      toDatePicker.set('minDate', dateStr);
+    }
+  });
+  
+  // Initialize to date picker
+  const toDatePicker = flatpickr('#toDate', { 
+    dateFormat: 'Y-m-d', 
+    maxDate: 'today', 
+    allowInput: true, 
+    tooltip: false,
+    defaultDate: 'today',
+    minDate: document.getElementById('fromDate').value || 'today'
+  });
+  
+  document.getElementById('refreshBtn')?.addEventListener('click', function () {
+    const fromVal = document.getElementById('fromDate')?.value;
+    const toVal = document.getElementById('toDate')?.value;
+    const url = new URL(window.location.href);
+    if (fromVal) url.searchParams.set('completedFrom', fromVal);
+    if (toVal) url.searchParams.set('completedTo', toVal);
+    window.location.href = url.toString();
+  });
+  
+  document.getElementById('exportBtn')?.addEventListener('click', function () {
+    const fromVal = document.getElementById('fromDate')?.value;
+    const toVal = document.getElementById('toDate')?.value;
+    const statusVal = document.getElementById('statusSelect')?.value;
+    
+    const url = new URL('/status-report/export', window.location.origin);
+    if (fromVal) url.searchParams.set('completedFrom', fromVal);
+    if (toVal) url.searchParams.set('completedTo', toVal);
+    if (statusVal) url.searchParams.set('status', statusVal);
+    
+    window.location.href = url.toString();
+  });
+</script>
+</body>
+</html>
+
+
