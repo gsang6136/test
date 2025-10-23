@@ -1,0 +1,61 @@
+package com.example.dashboard.web;
+
+import com.example.dashboard.enrollment.Enrollment;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+public class StatusReportRow {
+    private final Long id;
+    private final LocalDateTime createdAt;
+    private final String userId;
+    private final String environment;
+    private final Enrollment.Status status;
+    private final LocalDateTime completedAt;
+    private final String failureReason;
+    private final String timeTaken;
+    private final Integer inputValue;
+    private final Integer outputValue;
+
+    public StatusReportRow(Enrollment e) {
+        this.id = e.getId();
+        this.createdAt = e.getCreatedAt();
+        this.userId = e.getUserId();
+        this.environment = e.getEnvironment();
+        this.status = e.getStatus();
+        this.completedAt = e.getCompletedAt();
+        this.failureReason = e.getFailureReason();
+        this.timeTaken = computeTimeTaken(e.getCreatedAt(), e.getCompletedAt());
+        this.inputValue = e.getInputValue();
+        this.outputValue = e.getOutputValue();
+    }
+
+    private static String computeTimeTaken(LocalDateTime created, LocalDateTime completed) {
+        if (created == null || completed == null) return null;
+        Duration d = Duration.between(created, completed);
+        if (d.isNegative() || d.isZero()) return "0s";
+        long seconds = d.getSeconds();
+        long days = seconds / 86400; seconds %= 86400;
+        long hours = seconds / 3600; seconds %= 3600;
+        long minutes = seconds / 60; seconds %= 60;
+        StringBuilder sb = new StringBuilder();
+        if (days > 0) sb.append(days).append("d ");
+        if (hours > 0) sb.append(hours).append("h ");
+        if (minutes > 0) sb.append(minutes).append("m ");
+        if (seconds > 0 && days == 0) sb.append(seconds).append("s");
+        return sb.toString().trim();
+    }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Long getId() { return id; }
+    public String getUserId() { return userId; }
+    public String getEnvironment() { return environment; }
+    public Enrollment.Status getStatus() { return status; }
+    public LocalDateTime getCompletedAt() { return completedAt; }
+    public String getFailureReason() { return failureReason; }
+    public String getTimeTaken() { return timeTaken; }
+    public Integer getInputValue() { return inputValue; }
+    public Integer getOutputValue() { return outputValue; }
+}
+
+
