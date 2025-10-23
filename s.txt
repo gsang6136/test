@@ -1,0 +1,33 @@
+GetMapping("/status-report")
+    public String statusReport(@RequestParam(value = "status", required = false) Enrollment.Status status,
+                               @RequestParam(value = "user", required = false) String user,
+                               @RequestParam(value = "env", required = false) String env,
+                               @RequestParam(value = "completedFrom", required = false)
+                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate completedFrom,
+                               @RequestParam(value = "completedTo", required = false)
+                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate completedTo,
+                               @RequestParam(value = "minMinutes", required = false) Integer minMinutes,
+                               @RequestParam(value = "maxMinutes", required = false) Integer maxMinutes,
+                               @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                               @RequestParam(value = "size", required = false, defaultValue = "25") int size,
+                               Model model) {
+        // enforce max page size of 25
+        if (size > 25) size = 25;
+        if (size < 1) size = 1;
+        var pageResult = service.searchAdvanced(status, user, env, completedFrom, completedTo, minMinutes, maxMinutes, page, size)
+                .map(StatusReportRow::new);
+        DateTimeFormatter df = DateTimeFormatter.ISO_DATE;
+        model.addAttribute("fromStr", completedFrom != null ? df.format(completedFrom) : null);
+        model.addAttribute("toStr", completedTo != null ? df.format(completedTo) : null);
+        model.addAttribute("status", status);
+        model.addAttribute("user", user);
+        model.addAttribute("env", env);
+        model.addAttribute("minMinutes", minMinutes);
+        model.addAttribute("maxMinutes", maxMinutes);
+        model.addAttribute("rows", pageResult.getContent());
+        model.addAttribute("page", pageResult.getNumber());
+        model.addAttribute("size", pageResult.getSize());
+        model.addAttribute("totalPages", pageResult.getTotalPages());
+        model.addAttribute("totalElements", pageResult.getTotalElements());
+        return "status-report";
+    }
