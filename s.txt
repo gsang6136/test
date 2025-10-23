@@ -31,3 +31,31 @@ GetMapping("/status-report")
         model.addAttribute("totalElements", pageResult.getTotalElements());
         return "status-report";
     }
+ public Page<Enrollment> searchAdvanced(Enrollment.Status status, String userId, String environment,
+                                           LocalDate completedFrom, LocalDate completedTo,
+                                           Integer minMinutes, Integer maxMinutes,
+                                           int page, int size) {
+        LocalDateTime compFrom = completedFrom != null ? completedFrom.atStartOfDay() : null;
+        LocalDateTime compTo = completedTo != null ? completedTo.atTime(LocalTime.MAX) : null;
+        String u = (userId != null && !userId.isBlank()) ? userId : null;
+        String env = (environment != null && !environment.isBlank()) ? environment : null;
+        Page<Enrollment> base = repository.findByAdvancedFilters(status, u, env, compFrom, compTo, PageRequest.of(page, size));
+        if (minMinutes == null && maxMinutes == null) return base;
+        List<Enrollment> filtered = base.getContent().stream().filter(e -> {
+            if (e.getCompletedAt() == null || e.getCreatedAt() == null) return false;
+            long minutes = java.time.Duration.between(e.getCreatedAt(), e.getCompletedAt()).toMinutes();
+            if (minMinutes != null && minutes < minMinutes) return false;
+            if (maxMinutes != null && minutes > maxMinutes) return false;
+            return true;
+        }).toList();
+        return new org.springframework.data.domain.PageImpl<>(filtered, PageRequest.of(page, size), base.getTotalElements());
+    }
+
+
+  @Query("select e from Enrollment e where (:status is null or e.status = :status) and (:userId is null or lower(e.userId) like lower(concat('%', :userId, '%'))) and (:environment is null or lower(e.environment) like lower(concat('%', :environment, '%'))) and (:completedFrom is null or e.completedAt >= :completedFrom) and (:completedTo is null or e.completedAt <= :completedTo) order by e.createdAt desc")
+    Page<Enrollment> findByAdvancedFilters(@Param("status") Enrollment.Status status,
+                                           @Param("userId") String userId,
+                                           @Param("environment") String environment,
+                                           @Param("completedFrom") LocalDateTime completedFrom,
+                                           @Param("completedTo") LocalDateTime completedTo,
+                                           Pageable pageable);
