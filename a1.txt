@@ -1,0 +1,23 @@
+html[data-theme='dark'] { color-scheme: dark; }
+html, body { background-color: #0b1220 !important; color: #e5e7eb !important; }
+a { color: #93c5fd; }
+
+/* Forms */
+input, select, textarea { background: #111827 !important; color: #e5e7eb !important; border-color: #374151 !important; }
+input::placeholder, textarea::placeholder { color: #94a3b8; }
+label small.error { color: #fca5a5; }
+
+/* Tables */
+table, thead, tbody, tr { background: transparent !important; }
+table th, table td { border-color: #334155 !important; }
+
+/* Header/Nav */
+header.topbar { background:#0f172a !important; color:#fff !important; }
+header.topbar a { color:#93c5fd !important; }
+.header-bar { height:4px; background:linear-gradient(90deg,#22c55e,#3b82f6,#a855f7); }
+
+/* Cards */
+.card.started { background:#64748b !important; color:#ffffff !important; }
+.card.processing { background:#fb923c !important; color:#111827 !important; }
+.card.completed { background:#4ade80 !important; color:#052e1d !important; }
+.card.failed { background:#f87171 !important; color:#ffffff !important; }
