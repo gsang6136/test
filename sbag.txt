@@ -1,0 +1,713 @@
+@PostMapping("/status-report/{id}/status")
+    public String updateStatus(@PathVariable("id") Long id,
+                               @RequestParam("status") Enrollment.Status newStatus,
+                               @RequestParam(value = "statusFilter", required = false) Enrollment.Status statusFilter,
+                               @RequestParam(value = "user", required = false) String user,
+                               @RequestParam(value = "env", required = false) String env,
+                               @RequestParam(value = "completedFrom", required = false) String fromStr,
+                               @RequestParam(value = "completedTo", required = false) String toStr,
+                               @RequestParam(value = "minMinutes", required = false) Integer minMinutes,
+                               @RequestParam(value = "maxMinutes", required = false) Integer maxMinutes,
+                               @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                               @RequestParam(value = "size", required = false, defaultValue = "25") int size) {
+        service.updateStatus(id, newStatus, null);
+        StringBuilder redirect = new StringBuilder("redirect:/status-report?");
+        if (statusFilter != null) redirect.append("status=").append(statusFilter.name()).append('&');
+        if (user != null && !user.isBlank()) redirect.append("user=").append(user).append('&');
+        if (env != null && !env.isBlank()) redirect.append("env=").append(env).append('&');
+        if (fromStr != null && !fromStr.isBlank()) redirect.append("completedFrom=").append(fromStr).append('&');
+        if (toStr != null && !toStr.isBlank()) redirect.append("completedTo=").append(toStr).append('&');
+        if (minMinutes != null) redirect.append("minMinutes=").append(minMinutes).append('&');
+        if (maxMinutes != null) redirect.append("maxMinutes=").append(maxMinutes).append('&');
+        redirect.append("page=").append(page).append('&');
+        redirect.append("size=").append(size);
+        return redirect.toString();
+    }
+
+    @GetMapping("/update-status")
+    public String updateStatusPage(@RequestParam(value = "status", required = false) Enrollment.Status status,
+                                   @RequestParam(value = "user", required = false) String user,
+                                   @RequestParam(value = "env", required = false) String env,
+                                   @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                   @RequestParam(value = "size", required = false, defaultValue = "25") int size,
+                                   Model model) {
+        // enforce max page size of 25
+        if (size > 25) size = 25;
+        if (size < 1) size = 1;
+        
+        // Get enrollments with filtering and pagination
+        Page<Enrollment> pageResult;
+        if (status != null || (user != null && !user.isBlank()) || (env != null && !env.isBlank())) {
+            // Apply filters using searchAdvanced method
+            pageResult = service.searchAdvanced(status, user, env, null, null, null, null, page, size);
+        } else {
+            // Get all enrollments with pagination
+            pageResult = service.findAll(page, size);
+        }
+        
+        model.addAttribute("status", status);
+        model.addAttribute("user", user);
+        model.addAttribute("env", env);
+        model.addAttribute("enrollments", pageResult.getContent());
+        model.addAttribute("page", pageResult.getNumber());
+        model.addAttribute("size", pageResult.getSize());
+        model.addAttribute("totalPages", pageResult.getTotalPages());
+        model.addAttribute("totalElements", pageResult.getTotalElements());
+        return "update-status";
+    }
+
+    @PostMapping("/update-status/{id}/status")
+    public String updateStatusFromUpdatePage(@PathVariable("id") Long id,
+                                           @RequestParam("status") Enrollment.Status newStatus,
+                                           @RequestParam(value = "statusFilter", required = false) Enrollment.Status statusFilter,
+                                           @RequestParam(value = "user", required = false) String user,
+                                           @RequestParam(value = "env", required = false) String env,
+                                           @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                           @RequestParam(value = "size", required = false, defaultValue = "25") int size) {
+        service.updateStatus(id, newStatus, null);
+        StringBuilder redirect = new StringBuilder("redirect:/update-status?");
+        if (statusFilter != null) redirect.append("status=").append(statusFilter.name()).append('&');
+        if (user != null && !user.isBlank()) redirect.append("user=").append(user).append('&');
+        if (env != null && !env.isBlank()) redirect.append("env=").append(env).append('&');
+        redirect.append("page=").append(page).append('&');
+        redirect.append("size=").append(size);
+        return redirect.toString();
+    }
+
+    @PostMapping("/update-status/{id}/priority")
+    public String updatePriorityFromUpdatePage(@PathVariable("id") Long id,
+                                             @RequestParam("priority") Integer priority,
+                                             @RequestParam(value = "statusFilter", required = false) Enrollment.Status statusFilter,
+                                             @RequestParam(value = "user", required = false) String user,
+                                             @RequestParam(value = "env", required = false) String env,
+                                             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                             @RequestParam(value = "size", required = false, defaultValue = "25") int size) {
+        service.updatePriority(id, priority);
+        StringBuilder redirect = new StringBuilder("redirect:/update-status?");
+        if (statusFilter != null) redirect.append("status=").append(statusFilter.name()).append('&');
+        if (user != null && !user.isBlank()) redirect.append("user=").append(user).append('&');
+        if (env != null && !env.isBlank()) redirect.append("env=").append(env).append('&');
+        redirect.append("page=").append(page).append('&');
+        redirect.append("size=").append(size);
+        return redirect.toString();
+    }
+
+    @PostMapping("/update-status/{id}/apply")
+    public String applyStatusAndPriority(@PathVariable("id") Long id,
+                                         @RequestParam(value = "status", required = false) Enrollment.Status newStatus,
+                                         @RequestParam(value = "priority", required = false) Integer priority,
+                                         @RequestParam(value = "failureReason", required = false) String failureReason,
+                                         @RequestParam(value = "statusFilter", required = false) Enrollment.Status statusFilter,
+                                         @RequestParam(value = "user", required = false) String user,
+                                         @RequestParam(value = "env", required = false) String env,
+                                         @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                         @RequestParam(value = "size", required = false, defaultValue = "25") int size) {
+        service.updateStatusAndPriority(id, newStatus, priority, failureReason);
+        StringBuilder redirect = new StringBuilder("redirect:/update-status?");
+        if (statusFilter != null) redirect.append("status=").append(statusFilter.name()).append('&');
+        if (user != null && !user.isBlank()) redirect.append("user=").append(user).append('&');
+        if (env != null && !env.isBlank()) redirect.append("env=").append(env).append('&');
+        redirect.append("page=").append(page).append('&');
+        redirect.append("size=").append(size);
+        return redirect.toString();
+    }
+
+    @PostMapping("/update-status/bulk/status")
+<!DOCTYPE html>
+<html data-theme="dark" xmlns:th="http://www.thymeleaf.org" th:inline="none">
+<head>
+    <meta charset="UTF-8" />
+    <title>Status Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css?v=1" />
+    <!-- Flatpickr (dark theme) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        header.topbar{background:#0f172a;color:#fff;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
+        header.topbar a{color:#93c5fd;text-decoration:none;margin-left:1rem}
+        main.container{padding:1rem; overflow-x:auto;}
+        .hscroll{overflow-x:scroll; -webkit-overflow-scrolling:touch; width:100%; display:block}
+        table.wide{width:2150px;min-width:2150px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+        table.wide thead th{position:sticky;top:0;background:#0f172a;z-index:1}
+        table.wide tbody tr:nth-child(even){background-color:rgba(148,163,184,0.06)}
+        table.wide tbody tr:hover{background-color:rgba(148,163,184,0.12)}
+        table.wide th, table.wide td{white-space:nowrap;padding:10px 12px;border-bottom:1px solid #334155}
+        table.wide th:nth-child(1), table.wide td:nth-child(1){width:180px}
+        table.wide th:nth-child(2), table.wide td:nth-child(2){width:140px}
+        table.wide th:nth-child(3), table.wide td:nth-child(3){width:100px}
+        table.wide th:nth-child(4), table.wide td:nth-child(4){width:120px}
+        table.wide th:nth-child(5), table.wide td:nth-child(5){width:180px}
+        table.wide th:nth-child(6), table.wide td:nth-child(6){width:120px}
+        table.wide th:nth-child(7), table.wide td:nth-child(7){width:100px}
+        table.wide th:nth-child(8), table.wide td:nth-child(8){width:100px}
+        table.wide th:nth-child(9), table.wide td:nth-child(9){width:250px}
+        /* Table styling */
+        table.wide thead th{border-bottom:1px solid #334155}
+        .cell-clip{max-width:360px;overflow:hidden;text-overflow:ellipsis}
+        .status-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.85rem}
+        .status-STARTED{background:#334155;color:#e5e7eb}
+        .status-PROCESSING{background:#fb923c22;color:#fb923c}
+        .status-COMPLETED{background:#22c55e22;color:#22c55e}
+        .status-FAILED{background:#ef444422;color:#ef4444}
+        .grid-actions{display:flex;gap:8px;align-items:center}
+        .filters-bar{display:flex;gap:12px;align-items:center;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .filter-row label{margin:0;display:flex;flex-direction:column;gap:4px}
+        .filter-row input{min-width:180px}
+        /* Ensure status select shows full text */
+        .status-select{min-width:220px;width:220px!important;height:40px;line-height:1.2;padding:6px 12px;border-radius:0 8px 8px 0;background:#0b1220;color:#e5e7eb;border:1px solid #334155;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+        table.wide select[name="status"]{min-width:220px;width:220px!important}
+        .ff-input{width:220px!important;height:40px;line-height:1.2;padding:6px 12px;-webkit-appearance:none;-moz-appearance:textfield;appearance:none;box-sizing:border-box}
+        .filters-bar .input-group{width:auto;gap:0;margin:0}
+        .filters-bar .input-group{display:flex;align-items:center;height:40px}
+        .filters-bar .input-group .input-group-text{background:#0f172a;color:#e5e7eb;border-color:#334155;height:40px;line-height:1.2;display:flex;align-items:center;border-radius:8px 0 0 8px;padding:6px 12px;box-sizing:border-box;font-size:1rem;vertical-align:middle;transform:translateY(-2px)}
+        .filters-bar .form-select,.filters-bar .form-control{background:#0b1220;color:#e5e7eb;border-color:#334155;height:40px;line-height:1.2;border-radius:0 8px 8px 0;padding:6px 12px;box-sizing:border-box;vertical-align:middle}
+        /* Force Bootstrap small variants to exact height/padding/font to avoid misalignment */
+        .filters-bar .form-control-sm, .filters-bar .form-select-sm{height:32px !important;padding:4px 8px !important;font-size:0.875rem !important;line-height:1.2 !important}
+        /* Compact date inputs */
+        #fromDate, #toDate{width:140px !important;height:32px !important;padding:4px 8px !important;font-size:0.875rem !important}
+        .filters-actions .btn{height:32px;line-height:1;padding:4px 12px;font-size:0.875rem;}
+        /* Override Bootstrap button sizes in filter section */
+        .filter-section .btn{height:32px !important;padding:4px 12px !important;font-size:0.875rem !important;line-height:1.2 !important;}
+        
+        /* Fancy dropdown styling */
+        .form-select {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+            border: 2px solid #334155 !important;
+            border-radius: 12px !important;
+            color: #e5e7eb !important;
+            font-weight: 500 !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .form-select:hover {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+            outline: none !important;
+        }
+        
+        .form-select::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .form-select:hover::before {
+            left: 100%;
+        }
+        
+        /* Custom dropdown arrow */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px 12px !important;
+            padding-right: 40px !important;
+        }
+        
+        /* Option styling */
+        .form-select option {
+            background: #1e293b !important;
+            color: #e5e7eb !important;
+            padding: 8px 12px !important;
+            font-weight: 500 !important;
+        }
+        
+        .form-select option:hover {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        
+        .form-select option:checked {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        /* ensure small variants match height */
+        .filters-bar .input-group.input-group-sm .input-group-text{height:32px;padding:0 8px;font-size:0.875rem;line-height:1.5}
+        .filters-bar .input-group.input-group-sm .form-select,
+        .filters-bar .input-group.input-group-sm .form-control{height:32px;padding:0 8px;font-size:0.875rem;line-height:1.5}
+        .filters-bar .form-select{padding-right:32px}
+        .filters-bar{align-items:center}
+        .filter-section{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px;margin-bottom:12px}
+        .filters-simple .form-label{margin-bottom:4px}
+        /* Ensure datepicker overlays above header/table */
+        .datepicker{z-index:3000}
+        /* Unified button styles (like APPLY) */
+        .btn{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer}
+        .btn:hover{filter:brightness(1.05)}
+        .btn:active{transform:translateY(1px)}
+        .btn-sm{padding:4px 8px;font-size:.85rem}
+        .btn-success{background:#22c55e;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer}
+        .btn-success:hover{background:#16a34a;filter:brightness(1.05)}
+        .btn-success:active{transform:translateY(1px)}
+        /* Fancy inline update UI */
+        .update-inline{display:flex;gap:8px;align-items:center}
+        .pill-select{appearance:none;background:#0b1220;border:1px solid #334155;color:#e5e7eb;border-radius:999px;padding:6px 28px 6px 12px;position:relative}
+        .pill-select:focus{outline:2px solid #2563eb}
+        .pill-select-wrapper{position:relative}
+        .pill-select-wrapper:after{content:'▼';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none}
+        .btn-update{background:linear-gradient(135deg,#2563eb,#22c55e);border:none;color:white;border-radius:999px;padding:6px 12px;cursor:pointer}
+        .btn-update:hover{filter:brightness(1.05)}
+        .btn-update:active{transform:translateY(1px)}
+        /* Chips for time taken */
+        .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.85rem}
+        .chip-ok{background:#22c55e22;color:#22c55e}
+        .chip-warn{background:#f59e0b22;color:#f59e0b}
+        .chip-bad{background:#ef444422;color:#ef4444}
+    </style>
+</head>
+<body>
+<header class="topbar">
+    <strong>Status Report</strong>
+        <nav>
+            <a href="/">New</a>
+            <a href="/import">Import</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/update-status">Update Status</a>
+            <a href="/monitoring">Monitoring</a>
+        </nav>
+</header>
+<div class="header-bar"></div>
+
+<main class="container">
+    <form method="get" action="/status-report" class="filter-section">
+        <div class="filters-simple">
+            <div class="row g-3 align-items-start flex-nowrap">
+                <div class="col-auto">
+                    <label for="statusSelect" class="form-label mb-1">Status</label>
+                    <select id="statusSelect" name="status" class="form-select form-select-sm">
+                        <option value="" th:selected="${status == null}">Any</option>
+                        <option value="STARTED" th:selected="${status != null and status.name() == 'STARTED'}">STARTED</option>
+                        <option value="PROCESSING" th:selected="${status != null and status.name() == 'PROCESSING'}">PROCESSING</option>
+                        <option value="COMPLETED" th:selected="${status != null and status.name() == 'COMPLETED'}">COMPLETED</option>
+                        <option value="FAILED" th:selected="${status != null and status.name() == 'FAILED'}">FAILED</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="fromDate" class="form-label mb-1">From</label>
+                    <input id="fromDate" type="text" name="from" th:value="${fromStr}" class="form-control form-control-sm" />
+                </div>
+                <div class="col-auto">
+                    <label for="toDate" class="form-label mb-1">To</label>
+                    <input id="toDate" type="text" name="to" th:value="${toStr}" class="form-control form-control-sm" />
+                </div>
+                <div class="col-auto d-flex gap-2 align-self-end">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <button type="button" id="refreshBtn" class="btn btn-secondary">Refresh</button>
+                    <button type="button" id="exportBtn" class="btn btn-success">Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <div class="hscroll">
+            <table role="grid" class="wide table table-dark table-hover table-striped align-middle mb-0">
+            <thead>
+            <tr>
+                <th>Created</th>
+                <th>User</th>
+                <th>Env</th>
+                <th>
+                    Status
+                    <span th:if="${status != null}" class="status-chip" th:classappend="${' status-' + status}" th:text="${status}"></span>
+                </th>
+                <th>Completed At</th>
+                <th>Time Taken</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Failure Reason</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(rows)}">
+                <td colspan="9">No results</td>
+            </tr>
+            <tr th:each="e : ${rows}">
+                <td th:text="${#temporals.format(e.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${e.userId}"></td>
+                <td th:text="${e.environment}"></td>
+                <td><span class="status-chip" th:classappend="${' status-' + e.status}" th:text="${e.status}"></span></td>
+                <td th:text="${e.completedAt != null ? #temporals.format(e.completedAt, 'yyyy-MM-dd HH:mm') : ''}"></td>
+                <td th:text="${e.timeTaken}"></td>
+                <td th:text="${e.inputValue}"></td>
+                <td th:text="${e.outputValue}"></td>
+                <td>
+                    <span class="cell-clip" th:text="${e.failureReason}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <nav aria-label="Pagination" class="grid" style="margin-top:12px;align-items:center">
+        <div>
+            <small th:text="${'Showing page ' + (page + 1) + ' of ' + (totalPages > 0 ? totalPages : 1)}"></small>
+        </div>
+        <div style="justify-self:end;display:flex;gap:8px">
+            <a role="button" class="secondary" th:classappend="${page == 0} ? ' disabled' : ''" th:href="@{'/status-report'(status=${status}, user=${user}, env=${env}, completedFrom=${fromStr}, completedTo=${toStr}, minMinutes=${minMinutes}, maxMinutes=${maxMinutes}, page=${page-1}, size=${size})}">Prev</a>
+            <a role="button" class="secondary" th:classappend="${page + 1 >= totalPages} ? ' disabled' : ''" th:href="@{'/status-report'(status=${status}, user=${user}, env=${env}, completedFrom=${fromStr}, completedTo=${toStr}, minMinutes=${minMinutes}, maxMinutes=${maxMinutes}, page=${page+1}, size=${size})}">Next</a>
+        </div>
+    </nav>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  // Initialize from date picker
+  const fromDatePicker = flatpickr('#fromDate', { 
+    dateFormat: 'Y-m-d', 
+    maxDate: 'today', 
+    allowInput: true, 
+    tooltip: false,
+    defaultDate: 'today',
+    onChange: function(selectedDates, dateStr, instance) {
+      // Update to date picker's min date when from date changes
+      toDatePicker.set('minDate', dateStr);
+    }
+  });
+  
+  // Initialize to date picker
+  const toDatePicker = flatpickr('#toDate', { 
+    dateFormat: 'Y-m-d', 
+    maxDate: 'today', 
+    allowInput: true, 
+    tooltip: false,
+    defaultDate: 'today',
+    minDate: document.getElementById('fromDate').value || 'today'
+  });
+  
+  document.getElementById('refreshBtn')?.addEventListener('click', function () {
+    const fromVal = document.getElementById('fromDate')?.value;
+    const toVal = document.getElementById('toDate')?.value;
+    const url = new URL(window.location.href);
+    if (fromVal) url.searchParams.set('from', fromVal);
+    if (toVal) url.searchParams.set('to', toVal);
+    window.location.href = url.toString();
+  });
+  
+  document.getElementById('exportBtn')?.addEventListener('click', function () {
+    const fromVal = document.getElementById('fromDate')?.value;
+    const toVal = document.getElementById('toDate')?.value;
+    const statusVal = document.getElementById('statusSelect')?.value;
+    
+    const url = new URL('/status-report/export', window.location.origin);
+    if (fromVal) url.searchParams.set('from', fromVal);
+    if (toVal) url.searchParams.set('to', toVal);
+    if (statusVal) url.searchParams.set('status', statusVal);
+    
+    window.location.href = url.toString();
+  });
+</script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Update Status</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="/app.css?v=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        body { background: #0f172a; color: #e0e0e0; }
+        .header-bar { height: 4px; background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4); margin-bottom: 1rem; }
+        .filter-section { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .filter-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+        .filter-group { flex: 1; min-width: 200px; }
+        .filter-group label { color: #94a3b8; font-weight: 500; margin-bottom: 0.5rem; display: block; }
+        .form-control, .form-select { background: #0f172a; border: 1px solid #334155; color: #e0e0e0; border-radius: 8px; height: 38px; }
+        .form-control:focus, .form-select:focus { background: #0f172a; border-color: #3b82f6; color: #e0e0e0; box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25); }
+        .btn-primary { background: #3b82f6; border: 1px solid #3b82f6; border-radius: 8px; font-weight: 500; height: 38px; }
+        .btn-primary:hover { background: #2563eb; border-color: #2563eb; }
+        .btn-secondary { background: #64748b; border: 1px solid #64748b; border-radius: 8px; height: 38px; }
+        .btn-secondary:hover { background: #475569; border-color: #475569; }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+        .table-container { background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+        .table { margin: 0; color: #e0e0e0; }
+        .table thead th { background: #0f172a; color: #94a3b8; border-bottom: 2px solid #334155; font-weight: 600; padding: 1rem 0.75rem; }
+        .table tbody td { padding: 0.75rem; border-bottom: 1px solid #334155; vertical-align: middle; }
+        .table tbody tr:hover { background: rgba(59, 130, 246, 0.1); }
+        .table tbody tr:nth-child(even) { background: rgba(148, 163, 184, 0.05); }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-STARTED { background: #334155; color: #e5e7eb; }
+        .status-PROCESSING { background: #fb923c22; color: #fb923c; }
+        .status-COMPLETED { background: #22c55e22; color: #22c55e; }
+        .status-FAILED { background: #ef444422; color: #ef4444; }
+        .priority-badge { padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .priority-1 { background: #ef444422; color: #ef4444; }
+        .priority-2 { background: #f59e0b22; color: #f59e0b; }
+        .priority-3 { background: #22c55e22; color: #22c55e; }
+        .action-buttons { display: flex; gap: 0.5rem; align-items: center; }
+        .form-select-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; min-width: 100px; }
+        .pagination { margin: 0; }
+        .page-link { background: #1e293b; border: 1px solid #334155; color: #e0e0e0; }
+        .page-link:hover { background: #334155; border-color: #334155; color: #e0e0e0; }
+        .page-item.active .page-link { background: #3b82f6; border-color: #3b82f6; }
+        .no-results { text-align: center; padding: 3rem; color: #94a3b8; }
+        /* Match label spacing with status-report */
+        .filters-simple .form-label{ margin-bottom:4px }
+        /* Make User/Env small */
+        #userFilter.form-control-sm,#envFilter.form-control-sm{height:34px;padding:4px 10px;font-size:.9rem;line-height:1.2}
+        /* Disable tooltips */
+        * { 
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, select, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        input:focus, select:focus { outline: none; }
+        /* Disable browser tooltips */
+        [title] { pointer-events: none; }
+        input[title], select[title] { pointer-events: auto; }
+        
+        /* Fancy dropdown styling */
+        .form-select {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+            border: 2px solid #334155 !important;
+            border-radius: 12px !important;
+            color: #e5e7eb !important;
+            font-weight: 500 !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .form-select:hover {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+            outline: none !important;
+        }
+        
+        .form-select::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .form-select:hover::before {
+            left: 100%;
+        }
+        
+        /* Custom dropdown arrow */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 16px 12px !important;
+            padding-right: 40px !important;
+        }
+        
+        /* Option styling */
+        .form-select option {
+            background: #1e293b !important;
+            color: #e5e7eb !important;
+            padding: 8px 12px !important;
+            font-weight: 500 !important;
+        }
+        
+        .form-select option:hover {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        
+        .form-select option:checked {
+            background: #3b82f6 !important;
+            color: white !important;
+        }
+        
+        /* Fancy input styling to match dropdowns */
+        .form-control {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+            border: 2px solid #334155 !important;
+            border-radius: 12px !important;
+            color: #e5e7eb !important;
+            font-weight: 500 !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .form-control:hover {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .form-control:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+            transform: translateY(-1px) !important;
+            outline: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <strong>Update Status</strong>
+        <nav>
+            <a href="/">New</a>
+            <a href="/import">Import</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/status-report">Status Report</a>
+            <a href="/monitoring">Monitoring</a>
+        </nav>
+    </header>
+    <div class="header-bar"></div>
+
+    <main class="container" style="padding: 1rem;">
+        <!-- Filters (match status-report.html) -->
+        <form method="get" action="/update-status" class="filter-section">
+            <div class="filters-simple">
+                <div class="row g-3 align-items-start flex-nowrap">
+                    <div class="col-auto">
+                        <label for="statusFilter" class="form-label mb-1">Status</label>
+                        <select id="statusFilter" name="status" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            <option th:each="s : ${T(com.example.dashboard.enrollment.Enrollment.Status).values()}"
+                                    th:value="${s}"
+                                    th:text="${s}"
+                                    th:selected="${s?.name() == status?.name()}"></option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label for="userFilter" class="form-label mb-1">User</label>
+                        <input type="text" id="userFilter" name="user" class="form-control form-control-sm" th:value="${user}" placeholder="Enter user ID" style="min-width:220px" title="" autocomplete="off">
+                    </div>
+                    <div class="col-auto">
+                        <label for="envFilter" class="form-label mb-1">Env</label>
+                        <input type="text" id="envFilter" name="env" class="form-control form-control-sm" th:value="${env}" placeholder="Enter environment" style="min-width:160px" title="" autocomplete="off">
+                    </div>
+                    <div class="col-auto d-flex gap-2 align-self-end">
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/update-status'">Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover table-striped align-middle mb-0 wide">
+                    <thead>
+                        <tr>
+                            <th width="80">ID</th>
+                            <th width="120">User</th>
+                            <th width="120">Env</th>
+                            <th width="140">Current Status</th>
+                            <th width="100">Priority</th>
+                            <th width="160">Created</th>
+                            <th width="260">Update</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${enrollments}">
+                            <td th:text="${e.id}"></td>
+                            <td th:text="${e.userId}"></td>
+                            <td th:text="${e.environment}"></td>
+                            <td><span class="status-badge" th:classappend="'status-' + ${e.status?.name()}" th:text="${e.status?.name()}"></span></td>
+                            <td><span class="priority-badge" th:classappend="'priority-' + ${e.priority}" th:text="${e.priority}"></span></td>
+                            <td th:text="${#temporals.format(e.createdAt, 'MMM dd, yyyy')}"></td>
+                            <td>
+                                <form th:action="@{/update-status/{id}/apply(id=${e.id})}" method="post" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="statusFilter" th:value="${status?.name()}">
+                                    <input type="hidden" name="user" th:value="${user}">
+                                    <input type="hidden" name="env" th:value="${env}">
+                                    <input type="hidden" name="page" th:value="${page}">
+                                    <input type="hidden" name="size" th:value="${size}">
+                                    <select name="priority" class="form-select form-select-sm" style="min-width:90px">
+                                        <option value="1" th:selected="${e.priority == 1}">P1</option>
+                                        <option value="2" th:selected="${e.priority == 2}">P2</option>
+                                        <option value="3" th:selected="${e.priority == 3}">P3</option>
+                                    </select>
+                                    <select name="status" class="form-select form-select-sm" style="min-width:180px">
+                                        <option value="STARTED" th:selected="${e.status?.name() == 'STARTED'}">Started</option>
+                                        <option value="PROCESSING" th:selected="${e.status?.name() == 'PROCESSING'}">Processing</option>
+                                        <option value="COMPLETED" th:selected="${e.status?.name() == 'COMPLETED'}">Completed</option>
+                                        <option value="FAILED" th:selected="${e.status?.name() == 'FAILED'}">Failed</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(enrollments)}">
+                            <td colspan="7" class="no-results">
+                                <h5>No records found</h5>
+                                <p>Try adjusting your filters or check back later.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Pagination" class="d-flex justify-content-between align-items-center mt-4">
+            <div>
+                <small class="text-muted">
+                    Showing <span th:text="${page * size + 1}">1</span> to 
+                    <span th:text="${page * size + enrollments.size()}">25</span> of 
+                    <span th:text="${totalElements}">500</span> entries
+                </small>
+            </div>
+            <ul class="pagination mb-0">
+                <li class="page-item" th:classappend="${page == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/update-status(status=${status?.name()}, user=${user}, env=${env}, page=${page - 1}, size=${size})}">
+                        Previous
+                    </a>
+                </li>
+                <li class="page-item" th:classappend="${page == (totalPages - 1) ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/update-status(status=${status?.name()}, user=${user}, env=${env}, page=${page + 1}, size=${size})}">
+                        Next
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
