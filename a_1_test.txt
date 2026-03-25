@@ -247,7 +247,7 @@
     <section class="glass-card">
         <header class="card-head">
             <p class="eyebrow">Bulk upload</p>
-            <h1>Import enrollments</h1>
+            <h1>Import </h1>
             <p class="sub">Excel · stored as request id</p>
         </header>
 
@@ -305,7 +305,7 @@
     <details class="format-help">
         <summary>Excel column format</summary>
         <p style="margin:0.5rem 0 0.25rem;">Header row required:</p>
-        <pre>enrollmentType,state,country,subscriberAge,spouseAge,childAge,userId,environment,gender,city,zip,status,createdAt</pre>
+        <pre>Type,state,country,subscriberAge,spouseAge,childAge,userId,environment,gender,city,zip,status,createdAt</pre>
         <ul style="margin:0; padding-left:1rem;">
             <li><strong>status</strong>: STARTED, PROCESSING, COMPLETED, FAILED</li>
             <li><strong>createdAt</strong>: ISO-8601</li>
